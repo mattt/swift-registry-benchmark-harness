@@ -4,6 +4,9 @@ require 'json'
 require 'uri'
 require 'dotenv/tasks'
 
+# Disable FileUtils logging statements
+verbose(false)
+
 CLEAN << '.build'
 CLEAN << File.expand_path('~/Library/Caches/org.swift.swiftpm/repositories/')
 
