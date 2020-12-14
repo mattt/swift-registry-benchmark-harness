@@ -137,9 +137,9 @@ Here are some preliminary results from running the benchmarks locally:
 
 ```terminal
 $ bundle exec rake clobber benchmark
-time swift build
+time ./spm run
        20.63 real        81.01 user         8.28 sys
-time ./spm build --enable-package-registry
+time ./spm run --enable-package-registry
        16.47 real        24.47 user         3.93 sys
 ```
 

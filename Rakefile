@@ -73,7 +73,7 @@ directory '.index' => ['dependencies.json'] do |t|
   end
 end
 
-CLEAN << 'spm'
+CLOBBER << 'spm'
 desc 'Generate a shim for Swift package manager'
 file 'spm' => [:dotenv] do |t|
   raise 'Missing environment variable SWIFT_PACKAGE_MANAGER_BUILD_PATH' unless ENV['SWIFT_PACKAGE_MANAGER_BUILD_PATH']
@@ -124,13 +124,13 @@ end
 
 namespace :benchmark do
   desc 'Benchmark the performance of resolving with Git repositories'
-  task repository: [:clean, 'Package.resolved'] do
-    $logger.info command = 'time swift run -Xswiftc -suppress-warnings'
+  task repository: [:clean, 'spm', 'Package.resolved'] do
+    $logger.info command = 'time ./spm run -Xswiftc -suppress-warnings'
     system command
   end
 
   desc 'Benchmark the performance of resolving with a package registry'
-  task registry: [:clean, '.swiftpm/config', 'spm'] do
+  task registry: [:clean, 'spm', '.swiftpm/config'] do
     $logger.info command = 'time ./spm run --enable-package-registry -Xswiftc -suppress-warnings'
     system command
   end
