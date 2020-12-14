@@ -120,11 +120,7 @@ namespace :benchmark do
 
   desc 'Benchmark the performance of resolving with a package registry'
   task registry: [:clean, '.swiftpm/config', 'spm'] do
-    begin
-      rm 'Package.resolved'
-    rescue StandardError
-      nil
-    end
+    rm 'Package.resolved' if File.exist? 'Package.resolved'
     puts command = 'time ./spm run --enable-package-registry'
     system command
   end
