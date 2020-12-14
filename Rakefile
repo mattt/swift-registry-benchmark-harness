@@ -1,11 +1,15 @@
 require 'rake/clean'
 
+require 'logger'
 require 'json'
 require 'uri'
 require 'dotenv/tasks'
 
-# Disable FileUtils logging statements
-verbose(false)
+# Conditionalize FileUtils logging statements on $VERBOSE
+verbose($VERBOSE)
+
+$logger = Logger.new(STDOUT)
+$logger.level = $VERBOSE ? Logger::TRACE : Logger::INFO
 
 CLEAN << '.build'
 CLEAN << File.expand_path('~/Library/Caches/org.swift.swiftpm/repositories/')
@@ -13,7 +17,8 @@ CLEAN << File.expand_path('~/Library/Caches/org.swift.swiftpm/repositories/')
 CLEAN << 'Package.resolved'
 desc 'Resolve package dependencies'
 file 'Package.resolved' => ['Package.swift'] do
-  `swift package resolve`
+  $logger.debug command = 'swift package resolve'
+  system command
 end
 
 CLOBBER << 'dependencies.json'
@@ -35,7 +40,7 @@ end
 CLEAN << '.swiftpm/config'
 directory '.swiftpm'
 
-desc "Set mirror URLs for dependencies to go through package registry"
+desc 'Set mirror URLs for dependencies to go through package registry'
 file '.swiftpm/config' => [:dotenv, '.swiftpm', 'dependencies.json'] do |t|
   raise 'Missing environment variable SWIFT_REGISTRY_URL' unless ENV['SWIFT_REGISTRY_URL']
 
@@ -45,12 +50,14 @@ file '.swiftpm/config' => [:dotenv, '.swiftpm', 'dependencies.json'] do |t|
     original_url = URI(dependency['url'].sub(/\.git$/, ''))
     mirror_url = URI(ENV['SWIFT_REGISTRY_URL'])
     mirror_url.path = ('/' + original_url.host + original_url.path).squeeze('/')
-    `swift package config set-mirror --original-url #{original_url} --mirror-url #{mirror_url}`
+
+    $logger.debug command = "swift package config set-mirror --original-url #{original_url} --mirror-url #{mirror_url}"
+    system command
   end
 end
 
 CLOBBER << '.index'
-desc "Generate a package registry index from the list of dependencies"
+desc 'Generate a package registry index from the list of dependencies'
 directory '.index' => ['dependencies.json'] do |t|
   `swift registry init --index #{t.name}`
 
@@ -61,7 +68,8 @@ directory '.index' => ['dependencies.json'] do |t|
     package = url.host + url.path
     version = dependency['version'].sub(/^v?/, '')
 
-    `swift registry publish #{package} #{version} --index #{t.name}`
+    $logger.debug command = "swift registry publish #{package} #{version} --index #{t.name}"
+    system command
   end
 end
 
