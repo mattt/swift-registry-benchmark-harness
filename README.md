@@ -136,12 +136,11 @@ $ bundle exec rake benchmark --trace
 Here are some preliminary results from running the benchmarks locally:
 
 ```terminal
-$ bundle exec rake benchmark
+$ bundle exec rake clobber benchmark
 time swift build
-       38.60 real        85.35 user        10.92 sys
-
+       20.63 real        81.01 user         8.28 sys
 time ./spm build --enable-package-registry
-       31.44 real        83.92 user         9.30 sys
+       16.47 real        24.47 user         3.93 sys
 ```
 
 <details>
