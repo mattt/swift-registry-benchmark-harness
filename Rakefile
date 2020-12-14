@@ -109,31 +109,31 @@ end
 namespace :registry do
   desc 'Start running the package registry server'
   task start: ['.index', 'registry:stop'] do |t|
-    IO.popen(['swift-registry', 'serve', '--index', t.prerequisites.first])
+    args = ['swift-registry', 'serve', '--index', t.prerequisites.first]
+    $logger.debug args.join(' ')
+    IO.popen(args)
     sleep 1
   end
 
   desc 'Stop the package registry server'
   task :stop do
-    system 'pkill -f swift-registry'
+    $logger.debug command = 'pkill -f swift-registry'
+    system command
   end
 end
 
 namespace :benchmark do
   desc 'Benchmark the performance of resolving with Git repositories'
-  task repository: [:clean] do
-    puts command = 'time swift run'
+  task repository: [:clean, 'Package.resolved'] do
+    $logger.info command = 'time swift run -Xswiftc -suppress-warnings'
     system command
   end
 
   desc 'Benchmark the performance of resolving with a package registry'
   task registry: [:clean, '.swiftpm/config', 'spm'] do
-    rm 'Package.resolved' if File.exist? 'Package.resolved'
-    puts command = 'time ./spm run --enable-package-registry'
+    $logger.info command = 'time ./spm run --enable-package-registry -Xswiftc -suppress-warnings'
     system command
   end
-
-  task all: %i[repository registry]
 end
 
 Rake::Task['benchmark:registry'].enhance ['registry:start']
@@ -142,4 +142,9 @@ Rake::Task['benchmark:registry'].enhance do
 end
 
 desc 'Benchmark the performance of dependency resolution with repositories and a registry'
-task benchmark: 'benchmark:all'
+task :benchmark do
+    ['benchmark:repository', 'benchmark:registry'].each do |name|
+        Rake::Task[:clean].invoke
+        Rake::Task[name].invoke
+    end
+end
