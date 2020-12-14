@@ -11,6 +11,7 @@ CLEAN << '.build'
 CLEAN << File.expand_path('~/Library/Caches/org.swift.swiftpm/repositories/')
 
 CLEAN << 'Package.resolved'
+desc 'Resolve package dependencies'
 file 'Package.resolved' => ['Package.swift'] do
   `swift package resolve`
 end
@@ -33,6 +34,8 @@ end
 
 CLEAN << '.swiftpm/config'
 directory '.swiftpm'
+
+desc "Set mirror URLs for dependencies to go through package registry"
 file '.swiftpm/config' => [:dotenv, '.swiftpm', 'dependencies.json'] do |t|
   raise 'Missing environment variable SWIFT_REGISTRY_URL' unless ENV['SWIFT_REGISTRY_URL']
 
@@ -41,12 +44,13 @@ file '.swiftpm/config' => [:dotenv, '.swiftpm', 'dependencies.json'] do |t|
   dependencies.each do |dependency|
     original_url = URI(dependency['url'].sub(/\.git$/, ''))
     mirror_url = URI(ENV['SWIFT_REGISTRY_URL'])
-    mirror_url.path = ("/" + original_url.host + original_url.path).squeeze("/")
+    mirror_url.path = ('/' + original_url.host + original_url.path).squeeze('/')
     `swift package config set-mirror --original-url #{original_url} --mirror-url #{mirror_url}`
   end
 end
 
 CLOBBER << '.index'
+desc "Generate a package registry index from the list of dependencies"
 directory '.index' => ['dependencies.json'] do |t|
   `swift registry init --index #{t.name}`
 
@@ -62,6 +66,7 @@ directory '.index' => ['dependencies.json'] do |t|
 end
 
 CLEAN << 'spm'
+desc 'Generate a shim for Swift package manager'
 file 'spm' => [:dotenv] do |t|
   raise 'Missing environment variable SWIFT_PACKAGE_MANAGER_BUILD_PATH' unless ENV['SWIFT_PACKAGE_MANAGER_BUILD_PATH']
 
@@ -94,22 +99,26 @@ file 'spm' => [:dotenv] do |t|
 end
 
 namespace :registry do
+  desc 'Start running the package registry server'
   task start: ['.index', 'registry:stop'] do |t|
     IO.popen(['swift-registry', 'serve', '--index', t.prerequisites.first])
     sleep 1
   end
 
+  desc 'Stop the package registry server'
   task :stop do
     system 'pkill -f swift-registry'
   end
 end
 
 namespace :benchmark do
+  desc 'Benchmark the performance of resolving with Git repositories'
   task repository: [:clean] do
     puts command = 'time swift run'
     system command
   end
 
+  desc 'Benchmark the performance of resolving with a package registry'
   task registry: [:clean, '.swiftpm/config', 'spm'] do
     begin
       rm 'Package.resolved'
@@ -128,4 +137,5 @@ Rake::Task['benchmark:registry'].enhance do
   Rake::Task['registry:stop'].invoke
 end
 
+desc 'Benchmark the performance of dependency resolution with repositories and a registry'
 task benchmark: 'benchmark:all'
