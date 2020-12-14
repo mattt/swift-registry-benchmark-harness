@@ -15,6 +15,22 @@ file 'Package.resolved' => ['Package.swift'] do
   `swift package resolve`
 end
 
+CLOBBER << 'dependencies.json'
+desc 'Generate a list of dependencies'
+file 'dependencies.json' => ['Package.resolved'] do |t|
+  resolved = JSON(File.read(t.prerequisites.first))
+
+  dependencies = []
+  resolved['object']['pins'].each do |pin|
+    dependencies << {
+      url: pin['repositoryURL'],
+      version: pin['state']['version']
+    }
+  end
+
+  File.write(t.name, dependencies.to_json)
+end
+
 CLEAN << '.swiftpm/config'
 directory '.swiftpm'
 file '.swiftpm/config' => [:dotenv, '.swiftpm', 'dependencies.json'] do |t|
@@ -43,21 +59,6 @@ directory '.index' => ['dependencies.json'] do |t|
 
     `swift registry publish #{package} #{version} --index #{t.name}`
   end
-end
-
-CLOBBER << 'dependencies.json'
-file 'dependencies.json' => ['Package.resolved'] do |t|
-  resolved = JSON(File.read(t.prerequisites.first))
-
-  dependencies = []
-  resolved['object']['pins'].each do |pin|
-    dependencies << {
-      url: pin['repositoryURL'],
-      version: pin['state']['version']
-    }
-  end
-
-  File.write(t.name, dependencies.to_json)
 end
 
 CLEAN << 'spm'
