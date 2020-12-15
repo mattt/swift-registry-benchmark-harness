@@ -125,7 +125,7 @@ end
 
 namespace :benchmark do
   desc 'Benchmark the performance of resolving with Git repositories'
-  task repository: [:clean, 'spm', 'Package.resolved'] do
+  task repository: [:clean, 'spm'] do
     $logger.info command = 'time ./spm run -Xswiftc -suppress-warnings'
     system command
   end
