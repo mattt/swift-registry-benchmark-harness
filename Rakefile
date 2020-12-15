@@ -86,7 +86,7 @@ file 'spm' => [:dotenv] do |t|
     f << <<~SH
       #!/usr/bin/env bash
 
-      set -eo pipefail
+      set -euo pipefail
 
       if [ -z "$1" ]; then
           echo "missing subcommand [#{subcommands.join('|')}]"
