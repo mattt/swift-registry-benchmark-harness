@@ -23,7 +23,8 @@ end
 
 CLOBBER << 'dependencies.json'
 desc 'Generate a list of dependencies'
-file 'dependencies.json' => ['Package.resolved'] do |t|
+file 'dependencies.json' do |t|
+  t.enhance ['Package.resolved']
   resolved = JSON(File.read(t.prerequisites.first))
 
   dependencies = []
